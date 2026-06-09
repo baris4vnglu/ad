@@ -46,6 +46,7 @@ export default async function NitelikliIscilerPage({ params, searchParams }: Pro
 
   if (filters.category) query = query.eq("category", filters.category);
   if (filters.job_type) query = query.eq("job_type", filters.job_type);
+  if (filters.q) query = query.ilike("title", `%${filters.q}%`);
 
   const { data: jobs, count } = await query;
   const jobList = (jobs ?? []) as Array<Record<string, unknown>>;

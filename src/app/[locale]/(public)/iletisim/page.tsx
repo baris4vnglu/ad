@@ -8,10 +8,36 @@ export default function IletisimPage() {
   const t = useTranslations();
   const locale = useLocale();
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL || "";
+  const contactPhone = process.env.NEXT_PUBLIC_WHATSAPP || "";
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSuccess(true);
+    setLoading(true);
+    setError("");
+    const form = e.currentTarget;
+    const data = {
+      name: (form.elements.namedItem("name") as HTMLInputElement).value,
+      email: (form.elements.namedItem("email") as HTMLInputElement).value,
+      phone: (form.elements.namedItem("phone") as HTMLInputElement).value,
+      subject: (form.elements.namedItem("subject") as HTMLSelectElement).value,
+      message: (form.elements.namedItem("message") as HTMLTextAreaElement).value,
+    };
+    const res = await fetch("/api/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const json = await res.json() as { error?: string };
+      setError(json.error ?? t("common.error"));
+    } else {
+      setSuccess(true);
+    }
+    setLoading(false);
   }
 
   return (
@@ -36,8 +62,8 @@ export default function IletisimPage() {
             {/* Info cards */}
             <div className="md:col-span-2 flex flex-col gap-4">
               {[
-                { icon: "📧", labelKey: "contact.email_label", value: "haseebakram7777okay@gmail.com" },
-                { icon: "📞", labelKey: "contact.phone_label", value: "+90 542 888 06 96" },
+                { icon: "📧", labelKey: "contact.email_label", value: contactEmail },
+                { icon: "📞", labelKey: "contact.phone_label", value: contactPhone },
                 { icon: "🌍", labelKey: "contact.region_label", value: t("contact.region_value") },
                 { icon: "🕐", labelKey: "contact.hours_label", value: t("contact.hours_value") },
               ].map((item) => (
@@ -59,21 +85,24 @@ export default function IletisimPage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {error && (
+                    <div className="sm:col-span-2 bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm">{error}</div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">{t("contact.name")} *</label>
-                    <input required type="text" placeholder="Ahmet Yılmaz" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                    <input name="name" required type="text" placeholder="Ahmet Yılmaz" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">{t("contact.email")} *</label>
-                    <input required type="email" placeholder="ornek@email.com" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                    <input name="email" required type="email" placeholder="ornek@email.com" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">{t("contact.phone")}</label>
-                    <input type="tel" placeholder="+90 5XX XXX XX XX" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                    <input name="phone" type="tel" placeholder="+90 5XX XXX XX XX" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">{t("contact.subject")}</label>
-                    <select className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <select name="subject" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
                       <option>{t("contact.subjects.apply")}</option>
                       <option>{t("contact.subjects.post")}</option>
                       <option>{t("contact.subjects.invest")}</option>
@@ -83,11 +112,11 @@ export default function IletisimPage() {
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">{t("contact.message")} *</label>
-                    <textarea required rows={4} placeholder="Mesajınızı buraya yazın..." className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none" />
+                    <textarea name="message" required rows={4} placeholder="Mesajınızı buraya yazın..." className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none" />
                   </div>
                   <div className="sm:col-span-2">
-                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors">
-                      {t("contact.send")}
+                    <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-60">
+                      {loading ? t("common.loading") : t("contact.send")}
                     </button>
                   </div>
                 </form>

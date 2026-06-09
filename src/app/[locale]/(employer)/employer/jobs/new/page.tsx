@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/stores/authStore";
 import { CheckCircle, AlertCircle } from "lucide-react";
+import { PLANS } from "@/lib/payment-config";
 
 const SECTORS = [
   "Turizm & Otelcilik", "İnşaat & Yapı", "Bahçe & Peyzaj", "Sağlık",
@@ -55,10 +56,30 @@ export default function NewJobPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [hasSubscription, setHasSubscription] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!user) return;
     const supabase = createClient();
+    // Check active subscription
+    supabase
+      .from("payments")
+      .select("status, created_at, metadata")
+      .eq("user_id", user.id)
+      .eq("status", "completed")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) { setHasSubscription(false); return; }
+        const planId = (data as Record<string, unknown> & { metadata?: Record<string, unknown> }).metadata?.plan as string ?? "3m";
+        const plan = PLANS.find((p: { id: string; days: number }) => p.id === planId);
+        const days = plan?.days ?? 90;
+        const expiry = new Date((data as Record<string, unknown>).created_at as string);
+        expiry.setDate(expiry.getDate() + days);
+        setHasSubscription(expiry > new Date());
+      });
+
     supabase
       .from("companies")
       .select("id, name")
@@ -110,6 +131,26 @@ export default function NewJobPage() {
       setTimeout(() => router.push(`/${locale}/employer/jobs`), 2000);
     }
     setSaving(false);
+  }
+
+  if (hasSubscription === false) {
+    return (
+      <div className="max-w-2xl">
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-5">
+          <AlertCircle size={20} className="text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-amber-800">Aktif üyelik gerekli</p>
+            <p className="text-sm text-amber-600 mt-1">İlan verebilmek için aktif bir üyelik paketinizin olması gerekmektedir.</p>
+            <button
+              onClick={() => router.push(`/${locale}/fiyatlar`)}
+              className="mt-3 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+            >
+              Üyelik Al
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!companyId) {

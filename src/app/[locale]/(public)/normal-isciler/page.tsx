@@ -9,7 +9,7 @@ const PAGE_SIZE = 12;
 
 interface Props {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ category?: string; job_type?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; category?: string; job_type?: string; page?: string }>;
 }
 
 const JOB_TYPE_LABELS: Record<string, string> = {
@@ -43,6 +43,7 @@ export default async function NormalIscilerPage({ params, searchParams }: Props)
 
   if (filters.category) query = query.eq("category", filters.category);
   if (filters.job_type) query = query.eq("job_type", filters.job_type);
+  if (filters.q) query = query.ilike("title", `%${filters.q}%`);
 
   const { data: jobs, count } = await query;
   const jobList = (jobs ?? []) as Array<Record<string, unknown>>;
@@ -70,7 +71,7 @@ export default async function NormalIscilerPage({ params, searchParams }: Props)
 
       <section className="py-10">
         <div className="container mx-auto px-4">
-          <JobFilters locale={locale} currentFilters={{ ...filters, panel: "regular" }} />
+          <JobFilters locale={locale} currentFilters={{ ...filters, panel: "regular" }} basePath="normal-isciler" />
 
           {jobList.length === 0 ? (
             <div className="mt-8 bg-gray-50 rounded-2xl p-12 text-center">

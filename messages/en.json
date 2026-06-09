@@ -199,6 +199,14 @@
     "support": "Having trouble?",
     "contact_link": "Contact us"
   },
+  "blog": {
+    "title": "Blog",
+    "sub": "News and guides from the world of employment, migration, and investment.",
+    "back": "Back to Blog",
+    "empty": "No posts yet",
+    "empty_soon": "The first blog post will be added soon.",
+    "search": "Search Posts"
+  },
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",

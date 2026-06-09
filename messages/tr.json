@@ -199,6 +199,14 @@
     "support": "Sorun mu yaşıyorsunuz?",
     "contact_link": "Bize ulaşın"
   },
+  "blog": {
+    "title": "Blog",
+    "sub": "İstihdam, göç ve yatırım dünyasından haberler ve rehberler.",
+    "back": "Blog'a Dön",
+    "empty": "Henüz yazı yok",
+    "empty_soon": "İlk blog yazısı yakında eklenecek.",
+    "search": "Yazı Ara"
+  },
   "common": {
     "loading": "Yükleniyor...",
     "error": "Bir hata oluştu",
