@@ -61,7 +61,7 @@ export default async function NormalIscilerPage({ params, searchParams }: Props)
             <span>{t("nav.regular")}</span>
           </div>
           <div className="inline-block bg-emerald-400/20 text-emerald-200 text-xs font-semibold rounded-full px-3 py-1 mb-4">
-            Genel İşçiler
+            {t("regular.badge")}
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-3">{t("regular.title")}</h1>
           <p className="text-white/70 text-lg max-w-xl">{t("regular.sub")}</p>
@@ -161,7 +161,7 @@ export default async function NormalIscilerPage({ params, searchParams }: Props)
           </div>
           <Link href={`/${locale}/employer/jobs/new`}
             className="bg-white text-gray-900 font-semibold px-6 py-3 rounded-xl hover:bg-gray-100 transition-colors shrink-0">
-            İlan Ver
+            {t("regular.cta_btn")}
           </Link>
         </div>
       </section>

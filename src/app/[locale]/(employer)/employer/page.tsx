@@ -30,6 +30,27 @@ export default async function EmployerDashboard({ params }: Props) {
   const companyComplete = !!(company?.name);
   const latestPayment = paymentRes.data as { status: string; amount: number; currency: string; metadata: Record<string, unknown> | null; created_at: string } | null;
 
+  // Real stats
+  const myJobIds = await supabase
+    .from("jobs")
+    .select("id")
+    .eq("employer_id", user.id);
+  const jobIdList = (myJobIds.data ?? []).map((j: Record<string, unknown>) => j.id as string);
+
+  const [totalAppsRes, pendingAppsRes, unreadMsgsRes] = await Promise.all([
+    jobIdList.length > 0
+      ? supabase.from("applications").select("id", { count: "exact", head: true }).in("job_id", jobIdList)
+      : Promise.resolve({ count: 0 }),
+    jobIdList.length > 0
+      ? supabase.from("applications").select("id", { count: "exact", head: true }).in("job_id", jobIdList).eq("status", "pending")
+      : Promise.resolve({ count: 0 }),
+    supabase.from("messages").select("id", { count: "exact", head: true }).eq("is_read", false).neq("sender_id", user.id),
+  ]);
+
+  const totalApps = totalAppsRes.count ?? 0;
+  const pendingApps = pendingAppsRes.count ?? 0;
+  const unreadMsgs = unreadMsgsRes.count ?? 0;
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-1">
@@ -67,9 +88,9 @@ export default async function EmployerDashboard({ params }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
         {[
           { label: "Aktif İlanlar", value: activeJobs, color: "blue" },
-          { label: "Bekleyen Başvurular", value: 0, color: "amber" },
-          { label: "Toplam Başvuru", value: 0, color: "emerald" },
-          { label: "Mesajlar", value: 0, color: "purple" },
+          { label: "Bekleyen Başvurular", value: pendingApps, color: "amber" },
+          { label: "Toplam Başvuru", value: totalApps, color: "emerald" },
+          { label: "Okunmamış Mesaj", value: unreadMsgs, color: "purple" },
         ].map((s) => (
           <div key={s.label} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
             <div className={`text-3xl font-extrabold text-${s.color}-600`}>{s.value}</div>

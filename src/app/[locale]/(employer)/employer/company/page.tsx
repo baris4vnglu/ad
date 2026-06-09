@@ -6,6 +6,8 @@ import { uploadFile } from "@/lib/storage";
 import { useAuthStore } from "@/stores/authStore";
 import FileUpload from "@/components/common/FileUpload";
 import { CheckCircle } from "lucide-react";
+import DeleteAccountButton from "@/components/common/DeleteAccountButton";
+import ChangePasswordForm from "@/components/common/ChangePasswordForm";
 
 const SECTORS = [
   "Turizm & Otelcilik", "İnşaat & Yapı", "Bahçe & Peyzaj", "Sağlık",
@@ -213,6 +215,17 @@ export default function EmployerCompanyPage() {
           {saving ? "Kaydediliyor..." : "Şirket Profilini Kaydet"}
         </button>
       </form>
+
+      <ChangePasswordForm />
+
+      {/* KVKK - Hesap Silme */}
+      <div className="mt-8 pt-8 border-t border-gray-200">
+        <h2 className="text-base font-semibold text-gray-900 mb-1">Hesap Silme</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Hesabınızı kalıcı olarak silebilirsiniz. Bu işlem KVKK kapsamında tüm kişisel verilerinizi siler.
+        </p>
+        <DeleteAccountButton />
+      </div>
     </div>
   );
 }
