@@ -2,32 +2,34 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { Eye, Users } from "lucide-react";
 import JobActions from "./JobActions";
+import { getTranslations } from "next-intl/server";
 
 interface Props {
   params: Promise<{ locale: string }>;
   searchParams: Promise<{ status?: string }>;
 }
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  pending:  { label: "Onay Bekliyor", color: "amber" },
-  active:   { label: "Yayında",       color: "emerald" },
-  rejected: { label: "Reddedildi",    color: "red" },
-  draft:    { label: "Taslak",        color: "gray" },
-  expired:  { label: "Süresi Doldu",  color: "gray" },
-  filled:   { label: "Dolduruldu",    color: "blue" },
-};
-
-const STATUS_TABS = [
-  { value: "", label: "Tümü" },
-  { value: "pending", label: "Bekleyen" },
-  { value: "active", label: "Yayında" },
-  { value: "rejected", label: "Reddedilen" },
-];
-
 export default async function AdminJobsPage({ params, searchParams }: Props) {
   const { locale } = await params;
   const { status } = await searchParams;
+  const t = await getTranslations({ locale });
   const supabase = await createClient();
+
+  const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+    pending:  { label: t("admin.pending_short"), color: "amber" },
+    active:   { label: t("admin.active"),        color: "emerald" },
+    rejected: { label: t("admin.rejected"),      color: "red" },
+    draft:    { label: "Taslak",                 color: "gray" },
+    expired:  { label: "Süresi Doldu",           color: "gray" },
+    filled:   { label: "Dolduruldu",             color: "blue" },
+  };
+
+  const STATUS_TABS = [
+    { value: "", label: t("admin.all") },
+    { value: "pending", label: t("admin.pending_short") },
+    { value: "active", label: t("admin.active") },
+    { value: "rejected", label: t("admin.rejected") },
+  ];
 
   let query = supabase
     .from("jobs")
@@ -44,16 +46,17 @@ export default async function AdminJobsPage({ params, searchParams }: Props) {
   const { data: jobs } = await query;
   const jobList = (jobs ?? []) as Array<Record<string, unknown>>;
 
+  const dateLocale = locale === "tr" ? "tr-TR" : "en-GB";
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">İlan Yönetimi</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("admin.jobs")}</h1>
           <p className="text-gray-500 text-sm mt-0.5">{jobList.length} ilan</p>
         </div>
       </div>
 
-      {/* Status tabs */}
       <div className="flex gap-2 mb-6 flex-wrap">
         {STATUS_TABS.map((tab) => (
           <Link
@@ -72,7 +75,7 @@ export default async function AdminJobsPage({ params, searchParams }: Props) {
 
       {jobList.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-          <p className="text-gray-400">Bu durumda ilan yok.</p>
+          <p className="text-gray-400">{t("admin.no_items")}</p>
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -80,12 +83,12 @@ export default async function AdminJobsPage({ params, searchParams }: Props) {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">İlan</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Şirket</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Durum</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">İstatistik</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tarih</th>
-                  <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">İşlem</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.job")}</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.company")}</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.status")}</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.stats")}</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.date")}</th>
+                  <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -112,7 +115,7 @@ export default async function AdminJobsPage({ params, searchParams }: Props) {
                         </div>
                       </td>
                       <td className="px-5 py-4 text-xs text-gray-400">
-                        {new Date(job.created_at as string).toLocaleDateString("tr-TR")}
+                        {new Date(job.created_at as string).toLocaleDateString(dateLocale)}
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-2">
@@ -121,7 +124,7 @@ export default async function AdminJobsPage({ params, searchParams }: Props) {
                             className="text-xs text-blue-600 hover:underline"
                             target="_blank"
                           >
-                            Görüntüle
+                            {t("admin.view")}
                           </Link>
                           <JobActions jobId={job.id as string} currentStatus={jobStatus} />
                         </div>
