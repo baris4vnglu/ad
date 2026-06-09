@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Heart,
   ClipboardList,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -52,6 +53,7 @@ const NAV_BY_ROLE: Record<Role, { href: string; icon: React.ReactNode; label: st
     { href: "/admin/payments", icon: <TrendingUp size={18} />, label: "Ödemeler" },
     { href: "/admin/blog", icon: <FileText size={18} />, label: "Blog" },
     { href: "/admin/audit", icon: <ClipboardList size={18} />, label: "Audit Log" },
+    { href: "/admin/messages", icon: <Mail size={18} />, label: "İletişim Mesajları" },
     { href: "/admin/settings", icon: <ShieldCheck size={18} />, label: "Ayarlar" },
   ],
 };

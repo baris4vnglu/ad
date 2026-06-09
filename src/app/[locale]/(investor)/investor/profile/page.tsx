@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/stores/authStore";
 import { CheckCircle } from "lucide-react";
+import ChangePasswordForm from "@/components/common/ChangePasswordForm";
+import DeleteAccountButton from "@/components/common/DeleteAccountButton";
 
 const BUDGET_RANGES = ["€100K – €500K", "€500K – €1M", "€1M – €5M", "€5M+"];
 const SECTOR_INTERESTS = [
@@ -13,7 +15,8 @@ const SECTOR_INTERESTS = [
 export default function InvestorProfilePage() {
   const { user, profile } = useAuthStore();
 
-  const [fullName, setFullName] = useState(profile?.full_name ?? "");
+  const [existingId, setExistingId] = useState<string | null>(null);
+  const [fullName, setFullName] = useState((profile as unknown as Record<string, unknown>)?.full_name as string ?? "");
   const [phone, setPhone] = useState("");
   const [budgetRange, setBudgetRange] = useState("");
   const [sectorInterest, setSectorInterest] = useState("");
@@ -31,10 +34,11 @@ export default function InvestorProfilePage() {
       .eq("profile_id", user.id)
       .order("created_at", { ascending: false })
       .limit(1)
-      .single()
+      .maybeSingle()
       .then(({ data }) => {
         if (!data) return;
         const d = data as Record<string, unknown>;
+        setExistingId(d.id as string);
         setFullName((d.full_name as string) ?? "");
         setPhone((d.phone as string) ?? "");
         setBudgetRange((d.budget_range as string) ?? "");
@@ -50,20 +54,31 @@ export default function InvestorProfilePage() {
     setError("");
 
     const supabase = createClient();
-    const inquiryPayload = {
+    const payload = {
       profile_id: user.id,
       full_name: fullName,
-      email: profile?.email ?? "",
+      email: (profile as unknown as Record<string, unknown>)?.email as string ?? "",
       phone: phone || null,
       budget_range: budgetRange || null,
       sector_interest: sectorInterest || null,
       message: message || null,
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: err } = await supabase.from("investor_inquiries").insert(inquiryPayload as any);
 
-    if (err) {
-      setError(err.message);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const client = supabase as any;
+    let saveError: unknown;
+
+    if (existingId) {
+      const res = await client.from("investor_inquiries").update(payload).eq("id", existingId);
+      saveError = res.error;
+    } else {
+      const res = await client.from("investor_inquiries").insert(payload).select("id").single();
+      saveError = res.error;
+      if (!saveError && res.data?.id) setExistingId(res.data.id);
+    }
+
+    if (saveError) {
+      setError((saveError as { message: string }).message);
     } else {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -153,6 +168,13 @@ export default function InvestorProfilePage() {
           {saving ? "Kaydediliyor..." : "Profili Kaydet"}
         </button>
       </form>
+
+      <ChangePasswordForm />
+      <div className="mt-8 pt-8 border-t border-gray-200">
+        <h2 className="text-base font-semibold text-gray-900 mb-1">Hesabı Sil</h2>
+        <p className="text-sm text-gray-500 mb-4">Hesabınızı ve tüm verilerinizi kalıcı olarak silin.</p>
+        <DeleteAccountButton />
+      </div>
     </div>
   );
 }

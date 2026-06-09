@@ -1,30 +1,32 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import PaymentActions from "./PaymentActions";
+import { getTranslations } from "next-intl/server";
 
 interface Props {
   params: Promise<{ locale: string }>;
   searchParams: Promise<{ status?: string }>;
 }
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  pending:   { label: "Bekliyor",    color: "amber" },
-  completed: { label: "Onaylandı",  color: "emerald" },
-  failed:    { label: "Reddedildi", color: "red" },
-  refunded:  { label: "İade",       color: "gray" },
-};
-
-const STATUS_TABS = [
-  { value: "",          label: "Tümü" },
-  { value: "pending",   label: "Bekleyenler" },
-  { value: "completed", label: "Onaylananlar" },
-  { value: "failed",    label: "Reddedilenler" },
-];
-
 export default async function AdminPaymentsPage({ params, searchParams }: Props) {
   const { locale } = await params;
   const { status } = await searchParams;
+  const t = await getTranslations({ locale });
   const supabase = await createClient();
+
+  const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+    pending:   { label: t("admin.pending_short"), color: "amber" },
+    completed: { label: t("admin.approved"),      color: "emerald" },
+    failed:    { label: t("admin.rejected"),      color: "red" },
+    refunded:  { label: t("admin.refunded"),      color: "gray" },
+  };
+
+  const STATUS_TABS = [
+    { value: "",          label: t("admin.all") },
+    { value: "pending",   label: t("admin.pending_short") },
+    { value: "completed", label: t("admin.approved") },
+    { value: "failed",    label: t("admin.rejected") },
+  ];
 
   let query = supabase
     .from("payments")
@@ -38,12 +40,13 @@ export default async function AdminPaymentsPage({ params, searchParams }: Props)
   const list = (payments ?? []) as Array<Record<string, unknown>>;
 
   const pendingCount = status ? null : list.filter((p) => p.status === "pending").length;
+  const dateLocale = locale === "tr" ? "tr-TR" : "en-GB";
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Ödeme Yönetimi</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("admin.payments")}</h1>
           <p className="text-gray-500 text-sm mt-0.5">
             {list.length} kayıt
             {pendingCount ? <span className="ml-2 bg-amber-100 text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full">{pendingCount} bekliyor</span> : null}
@@ -51,7 +54,6 @@ export default async function AdminPaymentsPage({ params, searchParams }: Props)
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2 mb-6 flex-wrap">
         {STATUS_TABS.map((tab) => (
           <Link
@@ -70,7 +72,7 @@ export default async function AdminPaymentsPage({ params, searchParams }: Props)
 
       {list.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-gray-400">
-          Bu durumda ödeme yok.
+          {t("admin.no_items")}
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -78,12 +80,12 @@ export default async function AdminPaymentsPage({ params, searchParams }: Props)
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Kullanıcı</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Paket</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tutar</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Durum</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tarih</th>
-                  <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">İşlem</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.user")}</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.package")}</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.amount")}</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.status")}</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.date")}</th>
+                  <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.action")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -104,7 +106,7 @@ export default async function AdminPaymentsPage({ params, searchParams }: Props)
                         {meta?.plan_label as string ?? meta?.plan as string ?? "—"}
                       </td>
                       <td className="px-5 py-4 font-semibold text-gray-900">
-                        ${payment.amount as number} {payment.currency as string}
+                        {payment.amount as number} {payment.currency as string}
                       </td>
                       <td className="px-5 py-4">
                         <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-${cfg.color}-100 text-${cfg.color}-700`}>
@@ -112,7 +114,7 @@ export default async function AdminPaymentsPage({ params, searchParams }: Props)
                         </span>
                       </td>
                       <td className="px-5 py-4 text-xs text-gray-400">
-                        {new Date(payment.created_at as string).toLocaleDateString("tr-TR")}
+                        {new Date(payment.created_at as string).toLocaleDateString(dateLocale)}
                       </td>
                       <td className="px-5 py-4 text-right">
                         <PaymentActions paymentId={payment.id as string} currentStatus={payStatus} />
