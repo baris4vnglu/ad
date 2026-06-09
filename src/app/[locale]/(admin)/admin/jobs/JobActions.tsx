@@ -16,9 +16,27 @@ export default function JobActions({ jobId, currentStatus }: Props) {
   async function updateStatus(newStatus: string) {
     setLoading(true);
     const supabase = createClient();
-    const client = supabase as unknown as { from: (t: string) => { update: (v: unknown) => { eq: (c: string, v: string) => Promise<unknown> } } };
-    await client.from("jobs").update({ status: newStatus }).eq("id", jobId);
-    setStatus(newStatus);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("jobs")
+      .update({ status: newStatus })
+      .eq("id", jobId);
+
+    if (!error) {
+      // Write audit log
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any).from("audit_logs").insert({
+          admin_id: user.id,
+          action: newStatus === "active" ? "job_approved" : "job_rejected",
+          target_type: "job",
+          target_id: jobId,
+          details: { previous_status: status, new_status: newStatus },
+        });
+      }
+      setStatus(newStatus);
+    }
     setLoading(false);
   }
 

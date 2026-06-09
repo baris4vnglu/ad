@@ -18,6 +18,61 @@ body {
   direction: rtl;
 }
 
+[dir="rtl"] .container {
+  direction: rtl;
+}
+
+[dir="rtl"] .flex-row {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .text-left {
+  text-align: right;
+}
+
+[dir="rtl"] .text-right {
+  text-align: left;
+}
+
+[dir="rtl"] .ml-auto {
+  margin-left: unset;
+  margin-right: auto;
+}
+
+[dir="rtl"] .mr-auto {
+  margin-right: unset;
+  margin-left: auto;
+}
+
+[dir="rtl"] .border-l {
+  border-left: none;
+  border-right-width: 1px;
+}
+
+[dir="rtl"] .border-r {
+  border-right: none;
+  border-left-width: 1px;
+}
+
+[dir="rtl"] .rounded-l-none {
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+[dir="rtl"] .rounded-r-none {
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+
+[dir="rtl"] .space-x-4 > * + * {
+  margin-left: 0;
+  margin-right: 1rem;
+}
+
+[dir="rtl"] input,
+[dir="rtl"] textarea,
+[dir="rtl"] select {
+  text-align: right;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

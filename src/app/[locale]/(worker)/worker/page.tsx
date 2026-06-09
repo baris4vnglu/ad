@@ -15,11 +15,12 @@ export default async function WorkerDashboard({ params }: Props) {
 
   if (!user) redirect(`/${locale}/auth/login`);
 
-  const [profileRes, workerProfileRes, appsRes, paymentRes] = await Promise.all([
+  const [profileRes, workerProfileRes, appsRes, paymentRes, favRes] = await Promise.all([
     (supabase.from("profiles").select("*").eq("id", user.id).single() as unknown) as Promise<{ data: { full_name: string | null; role: string } | null; error: unknown }>,
     supabase.from("worker_profiles").select("title, cv_url, is_available").eq("profile_id", user.id).single(),
     supabase.from("applications").select("id", { count: "exact", head: true }).eq("worker_id", user.id),
     supabase.from("payments").select("status, amount, currency, metadata, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("favorites").select("id", { count: "exact", head: true }).eq("user_id", user.id),
   ]);
 
   const profile = profileRes.data;
@@ -27,6 +28,7 @@ export default async function WorkerDashboard({ params }: Props) {
 
   const workerProfile = workerProfileRes.data as { title: string | null; cv_url: string | null; is_available: boolean } | null;
   const appsCount = appsRes.count ?? 0;
+  const favCount = favRes.count ?? 0;
   const latestPayment = paymentRes.data as { status: string; amount: number; currency: string; metadata: Record<string, unknown> | null; created_at: string } | null;
 
   // Calculate profile completeness
@@ -89,7 +91,7 @@ export default async function WorkerDashboard({ params }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {[
           { label: "Başvurularım", value: appsCount, color: "blue", href: `/${locale}/worker/applications` },
-          { label: "Kaydedilen İlanlar", value: 0, color: "emerald", href: "#" },
+          { label: "Kaydedilen İlanlar", value: favCount, color: "emerald", href: `/${locale}/worker/favorites` },
           { label: "Mesajlar", value: 0, color: "purple", href: `/${locale}/worker/messages` },
         ].map((s) => (
           <Link key={s.label} href={s.href} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">

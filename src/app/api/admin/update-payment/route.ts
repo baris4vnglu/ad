@@ -1,6 +1,12 @@
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+
+const schema = z.object({
+  paymentId: z.string().uuid(),
+  status: z.enum(["pending", "completed", "failed", "refunded"]),
+});
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -17,12 +23,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const body = await request.json() as { paymentId: string; status: string };
-  const { paymentId, status } = body;
-
-  if (!["pending", "completed", "failed", "refunded"].includes(status)) {
-    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Geçersiz istek." }, { status: 400 });
   }
+
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Geçersiz parametreler." }, { status: 400 });
+  }
+
+  const { paymentId, status } = parsed.data;
 
   const admin = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,12 +43,22 @@ export async function POST(request: Request) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (admin as any)
+  const { error } = await admin
     .from("payments")
     .update({ status })
     .eq("id", paymentId);
 
-  if (error) return NextResponse.json({ error: (error as Error).message }, { status: 400 });
+  if (error) return NextResponse.json({ error: "Güncelleme başarısız." }, { status: 400 });
+
+  // Audit log
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any).from("audit_logs").insert({
+    admin_id: user.id,
+    action: `payment_${status}`,
+    target_type: "payment",
+    target_id: paymentId,
+    details: { new_status: status },
+  });
+
   return NextResponse.json({ success: true });
 }

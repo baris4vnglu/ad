@@ -1,9 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { MapPin, Clock, Briefcase, Users, Calendar, Eye, Building2 } from "lucide-react";
 import type { Metadata } from "next";
 import ApplyButton from "./ApplyButton";
+import FavoriteButton from "@/components/jobs/FavoriteButton";
 
 interface Props {
   params: Promise<{ locale: string; id: string }>;
@@ -70,15 +72,18 @@ export default async function JobDetailPage({ params }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (supabase.rpc as any)("increment_job_views", { job_id: id });
 
-  // Check if user already applied
+  // Check if user already applied and favorited
   let hasApplied = false;
+  let hasFavorited = false;
   let workerCvUrl: string | null = null;
   if (user) {
-    const [appRes, workerRes] = await Promise.all([
+    const [appRes, workerRes, favRes] = await Promise.all([
       supabase.from("applications").select("id").eq("job_id", id).eq("worker_id", user.id).single(),
       supabase.from("worker_profiles").select("cv_url").eq("profile_id", user.id).single(),
+      supabase.from("favorites").select("id").eq("job_id", id).eq("user_id", user.id).single(),
     ]);
     hasApplied = !!appRes.data;
+    hasFavorited = !!favRes.data;
     workerCvUrl = (workerRes.data as Record<string, unknown> | null)?.cv_url as string ?? null;
   }
 
@@ -122,8 +127,7 @@ export default async function JobDetailPage({ params }: Props) {
 
           <div className="flex items-start gap-4">
             {companyLogoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={companyLogoUrl} alt="" className="w-16 h-16 rounded-xl object-cover bg-white/10 shrink-0" />
+              <Image src={companyLogoUrl} alt="" width={64} height={64} className="rounded-xl object-cover bg-white/10 shrink-0" />
             ) : (
               <div className="w-16 h-16 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
                 <Building2 size={28} className="text-white/50" />
@@ -186,6 +190,11 @@ export default async function JobDetailPage({ params }: Props) {
                   hasApplied={hasApplied}
                   workerCvUrl={workerCvUrl}
                 />
+                {user && (
+                  <div className="mt-3 flex justify-end">
+                    <FavoriteButton jobId={id} userId={user.id} initialSaved={hasFavorited} />
+                  </div>
+                )}
               </div>
 
               {/* Job info */}

@@ -10,7 +10,7 @@ export const PAYMENT_CONFIG = {
   iban:          process.env.NEXT_PUBLIC_IBAN            ?? "TR00 0000 0000 0000 0000 0000 00",
   bankName:      process.env.NEXT_PUBLIC_BANK_NAME       ?? "Ziraat Bankası",
   accountHolder: process.env.NEXT_PUBLIC_ACCOUNT_HOLDER  ?? "AD Global Work Ltd.",
-  email:         "haseebakram7777okay@gmail.com",
+  email:         process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "",
   // WhatsApp: sadece rakamlar, başında + yok
   whatsapp:      process.env.NEXT_PUBLIC_WHATSAPP        ?? "905428880696",
 };

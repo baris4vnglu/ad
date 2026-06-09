@@ -1,12 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import Image from "next/image";
 import { getTranslations } from "next-intl/server";
-import { MapPin, Briefcase, Users, Clock } from "lucide-react";
+import { MapPin, Briefcase, Users, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import JobFilters from "../nitelikli-isciler/JobFilters";
+
+const PAGE_SIZE = 12;
 
 interface Props {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ category?: string; job_type?: string }>;
+  searchParams: Promise<{ category?: string; job_type?: string; page?: string }>;
 }
 
 const JOB_TYPE_LABELS: Record<string, string> = {
@@ -21,6 +24,9 @@ export default async function NormalIscilerPage({ params, searchParams }: Props)
   const { locale } = await params;
   const filters = await searchParams;
   const t = await getTranslations();
+  const page = Math.max(1, parseInt(filters.page ?? "1") || 1);
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
   const supabase = await createClient();
 
   let query = supabase
@@ -29,17 +35,18 @@ export default async function NormalIscilerPage({ params, searchParams }: Props)
       id, title, category, job_type, location, salary_min, salary_max,
       salary_currency, openings, created_at,
       companies (name, logo_url)
-    `)
+    `, { count: "exact" })
     .eq("status", "active")
     .eq("panel", "regular")
     .order("created_at", { ascending: false })
-    .limit(50);
+    .range(from, to);
 
   if (filters.category) query = query.eq("category", filters.category);
   if (filters.job_type) query = query.eq("job_type", filters.job_type);
 
-  const { data: jobs } = await query;
+  const { data: jobs, count } = await query;
   const jobList = (jobs ?? []) as Array<Record<string, unknown>>;
+  const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE);
 
   return (
     <>
@@ -90,8 +97,7 @@ export default async function NormalIscilerPage({ params, searchParams }: Props)
                     className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all p-5 flex flex-col">
                     <div className="flex items-start gap-3 mb-3">
                       {company?.logo_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={company.logo_url as string} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                        <Image src={company.logo_url as string} alt="" width={40} height={40} className="rounded-lg object-cover shrink-0" />
                       ) : (
                         <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-600 font-bold text-sm">
                           {(company?.name as string ?? "?")[0]}
@@ -118,6 +124,30 @@ export default async function NormalIscilerPage({ params, searchParams }: Props)
                   </Link>
                 );
               })}
+            </div>
+          )}
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-8 flex items-center justify-center gap-2">
+              {page > 1 && (
+                <Link
+                  href={`/${locale}/normal-isciler?${new URLSearchParams({ ...filters, page: String(page - 1) }).toString()}`}
+                  className="flex items-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  <ChevronLeft size={15} /> Önceki
+                </Link>
+              )}
+              <span className="text-sm text-gray-500 px-3">
+                {page} / {totalPages}
+              </span>
+              {page < totalPages && (
+                <Link
+                  href={`/${locale}/normal-isciler?${new URLSearchParams({ ...filters, page: String(page + 1) }).toString()}`}
+                  className="flex items-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  Sonraki <ChevronRight size={15} />
+                </Link>
+              )}
             </div>
           )}
         </div>
