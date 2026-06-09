@@ -8,13 +8,14 @@ import {
   Briefcase,
   FileText,
   MessageCircle,
-  Bell,
   User,
   Settings,
   Building2,
   TrendingUp,
   Users,
   ShieldCheck,
+  Heart,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,7 @@ const NAV_BY_ROLE: Record<Role, { href: string; icon: React.ReactNode; label: st
     { href: "/worker", icon: <LayoutDashboard size={18} />, label: "Panel" },
     { href: "/nitelikli-isciler", icon: <Briefcase size={18} />, label: "İş İlanları" },
     { href: "/worker/applications", icon: <FileText size={18} />, label: "Başvurularım" },
+    { href: "/worker/favorites", icon: <Heart size={18} />, label: "Kaydedilenler" },
     { href: "/worker/messages", icon: <MessageCircle size={18} />, label: "Mesajlar" },
     { href: "/worker/profile", icon: <User size={18} />, label: "Profilim" },
   ],
@@ -49,6 +51,7 @@ const NAV_BY_ROLE: Record<Role, { href: string; icon: React.ReactNode; label: st
     { href: "/admin/applications", icon: <FileText size={18} />, label: "Başvurular" },
     { href: "/admin/payments", icon: <TrendingUp size={18} />, label: "Ödemeler" },
     { href: "/admin/blog", icon: <FileText size={18} />, label: "Blog" },
+    { href: "/admin/audit", icon: <ClipboardList size={18} />, label: "Audit Log" },
     { href: "/admin/settings", icon: <ShieldCheck size={18} />, label: "Ayarlar" },
   ],
 };
